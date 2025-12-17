@@ -1,0 +1,78 @@
+﻿@model MyMvcProject.Models.MusicInputViewModel
+@{
+    ViewData["Title"] = "Bookify";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-primary mb-3">🎵 Bookify 🎵</h1>
+                <p class="lead text-muted">Get personalized book recommendations based on the music you listen to.</p>
+            </div>
+
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <form asp-controller="Home" asp-action="GetRecommendations" method="post" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-4">
+                            <label asp-for="Input" class="form-label fw-bold fs-5">
+                                Enter Music Genre, Song, Artist, or Mood.
+                            </label>
+                            <input asp-for="Input" 
+                                   class="form-control form-control-lg" 
+                                   placeholder="E.g.: Lofi, Rock, Metal, Chill, Sad & Calm, Deep Focus..." 
+                                   required />
+                            <span asp-validation-for="Input" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> 
+                               You can write down the genre of music you're listening to, the song title, the artist, or your mood.
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-search"></i> Get Book Recommendations
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-4 mb-3">⚡</div>
+                            <h5 class="card-title">Quick Recommendations</h5>
+                            <p class="card-text text-muted">Personalized book recommendations in 2 seconds.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-4 mb-3">🎯</div>
+                            <h5 class="card-title">Personalized</h5>
+                            <p class="card-text text-muted">Personalized recommendations based on your musical taste.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-4 mb-3">📚</div>
+                            <h5 class="card-title">Favorites</h5>
+                            <p class="card-text text-muted">Save the books you like.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

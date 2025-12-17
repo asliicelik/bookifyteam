@@ -1,0 +1,95 @@
+@model MyMvcProject.Models.UserPreferences
+@{
+    ViewData["Title"] = "My Profile & Preferences";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="mb-4">My Profile & Preferences</h2>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Recent Searches</h5>
+                    @if (Model.RecentInputs.Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var input in Model.RecentInputs)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>@input</span>
+                                    <form asp-controller="Home" asp-action="GetRecommendations" method="get" class="d-inline">
+                                        <input type="hidden" name="input" value="@input" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                            Search Again
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No searches yet.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Favorite Music Genres</h5>
+                    @if (Model.FavoriteGenres.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var genre in Model.FavoriteGenres)
+                            {
+                                <span class="badge bg-primary fs-6">@genre</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No favorite music genres added yet.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Favorite Moods</h5>
+                    @if (Model.FavoriteMoods.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var mood in Model.FavoriteMoods)
+                            {
+                                <span class="badge bg-info fs-6">@mood</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No favorite moods added yet.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a asp-controller="Book" asp-action="Favorites" class="btn btn-primary">
+                    <i class="bi bi-heart-fill"></i> My Favorite Books
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-house"></i> Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+

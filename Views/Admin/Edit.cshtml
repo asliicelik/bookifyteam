@@ -1,0 +1,96 @@
+@model MyMvcProject.Models.Book
+@{
+    ViewData["Title"] = "Edit Book";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="mb-4">Edit Book</h2>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-bold">Title *</label>
+                            <input asp-for="Title" class="form-control" required />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Author" class="form-label fw-bold">Author *</label>
+                            <input asp-for="Author" class="form-control" required />
+                            <span asp-validation-for="Author" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Description *</label>
+                            <textarea asp-for="Description" class="form-control" rows="4" required></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Genre" class="form-label fw-bold">Genre *</label>
+                                <input asp-for="Genre" class="form-control" required />
+                                <span asp-validation-for="Genre" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Mood" class="form-label fw-bold">Mood *</label>
+                                <select asp-for="Mood" class="form-select" required>
+                                    <option value="">Select a mood</option>
+                                    @if (ViewBag.Moods != null)
+                                    {
+                                        @foreach (var mood in ViewBag.Moods as List<string> ?? new List<string>())
+                                        {
+                                            <option value="@mood">@mood</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="Mood" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Year" class="form-label fw-bold">Year *</label>
+                                <input asp-for="Year" type="number" class="form-control" min="1000" max="2100" required />
+                                <span asp-validation-for="Year" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Isbn" class="form-label fw-bold">ISBN</label>
+                                <input asp-for="Isbn" class="form-control" />
+                                <span asp-validation-for="Isbn" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CoverImageUrl" class="form-label fw-bold">Cover Image URL</label>
+                            <input asp-for="CoverImageUrl" class="form-control" type="url" />
+                            <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Update Book
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
