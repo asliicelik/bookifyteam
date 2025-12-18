@@ -161,6 +161,95 @@ public class RecommendationService : IRecommendationService
         return scored;
     }
 
+    public BookResult? RecommendBookFromListeningHistory(List<string> artistNames, List<string> songIds)
+    {
+        var songs = _songCatalogProvider.GetAll();
+
+        var selectedSongs = new List<Song>();
+
+        var normalizedArtistNames = artistNames
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Select(a => a.Trim())
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)
+            .ToList();
+
+        if (normalizedArtistNames.Any())
+        {
+            var artistSet = new HashSet<string>(normalizedArtistNames, StringComparer.InvariantCultureIgnoreCase);
+            selectedSongs.AddRange(songs.Where(s => artistSet.Contains(s.Artist)));
+        }
+
+        var normalizedSongIds = songIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(id => id.Trim())
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)
+            .ToList();
+
+        if (normalizedSongIds.Any())
+        {
+            var songSet = new HashSet<string>(normalizedSongIds, StringComparer.InvariantCultureIgnoreCase);
+            selectedSongs.AddRange(songs.Where(s => songSet.Contains(s.Id)));
+        }
+
+        // De-duplicate songs
+        selectedSongs = selectedSongs
+            .GroupBy(s => s.Id, StringComparer.InvariantCultureIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
+        if (!selectedSongs.Any())
+        {
+            return null;
+        }
+
+        // Aggregate mood affinities from all selected songs.
+        var aggregated = new Dictionary<string, double>(StringComparer.InvariantCultureIgnoreCase);
+
+        foreach (var song in selectedSongs)
+        {
+            foreach (var kv in song.MoodAffinities)
+            {
+                if (!aggregated.ContainsKey(kv.Key))
+                {
+                    aggregated[kv.Key] = 0;
+                }
+
+                aggregated[kv.Key] += kv.Value;
+            }
+        }
+
+        // Normalize by number of songs to get an average profile.
+        var songCount = selectedSongs.Count;
+        if (songCount > 0)
+        {
+            var keys = aggregated.Keys.ToList();
+            foreach (var key in keys)
+            {
+                aggregated[key] /= songCount;
+            }
+        }
+
+        if (!aggregated.Any())
+        {
+            return null;
+        }
+
+        var books = _bookCatalogProvider.GetAll();
+
+        var best = books
+            .Select(book => new BookResult
+            {
+                Book = book,
+                Score = ComputeScore(book.MoodAffinities, aggregated)
+            })
+            .Where(r => r.Score > 0)
+            .OrderByDescending(r => r.Score)
+            .ThenBy(r => r.Book!.Title)
+            .FirstOrDefault();
+
+        return best;
+    }
+
     public BookResult? RecommendBook(List<string> moodIds)
     {
         var normalizedMoods = NormalizeMoodIds(moodIds);

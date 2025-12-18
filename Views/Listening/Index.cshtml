@@ -1,0 +1,147 @@
+@model MyMvcProject.Models.ListeningHistoryViewModel
+@{
+    ViewData["Title"] = "Listening History Recommendations";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="card-title h4 mb-3">
+                        <i class="bi bi-headphones"></i> Select Artists & Songs
+                    </h3>
+                    <p class="text-muted">
+                        Choose up to <strong>20 artists</strong> and optionally specific songs.
+                        We will recommend <strong>one book</strong> that best matches the overall vibe.
+                    </p>
+
+                    <form asp-action="Recommend" asp-controller="Listening" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold">Artists</label>
+                                <small class="text-muted">Max 20</small>
+                            </div>
+                            <div class="border rounded p-2" style="max-height: 260px; overflow-y: auto;">
+                                @foreach (var artist in Model.Artists)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input artist-checkbox"
+                                               type="checkbox"
+                                               name="SelectedArtistIds"
+                                               value="@artist.Id"
+                                               id="artist_@artist.Id"
+                                               @(artist.IsSelected ? "checked" : null) />
+                                        <label class="form-check-label" for="artist_@artist.Id">
+                                            @artist.Name
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                            <span asp-validation-for="SelectedArtistIds" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Songs (optional)</label>
+                            <div class="border rounded p-2" style="max-height: 260px; overflow-y: auto;">
+                                @foreach (var song in Model.Songs)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="SelectedSongIds"
+                                               value="@song.Id"
+                                               id="song_@song.Id"
+                                               @(song.IsSelected ? "checked" : null) />
+                                        <label class="form-check-label" for="song_@song.Id">
+                                            <strong>@song.Title</strong> <span class="text-muted">(@song.Artist)</span>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-book"></i> Recommend a Book
+                        </button>
+
+                        @if (!string.IsNullOrEmpty(Model.ValidationMessage))
+                        {
+                            <div class="alert alert-warning mt-3 mb-0" role="alert">
+                                @Model.ValidationMessage
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-info small">
+                <strong>How it works?</strong><br />
+                We take all songs from selected artists (plus any extra songs you tick),
+                combine their mood profiles, and match them against book profiles.
+                The book with the highest similarity score is recommended.
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <h3 class="h4 mb-3">
+                <i class="bi bi-book-half"></i> Recommended Book
+            </h3>
+            @if (Model.BookResult != null && Model.BookResult.Book != null && Model.BookResult.Score > 0)
+            {
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title mb-1">@Model.BookResult.Book.Title</h4>
+                        <p class="card-subtitle text-muted mb-2">@Model.BookResult.Book.Author</p>
+                        <p>
+                            <span class="badge bg-secondary">@Model.BookResult.Book.Category</span>
+                        </p>
+                        <p class="mb-0">
+                            <span class="badge bg-success-subtle text-success-emphasis">
+                                Score: @Model.BookResult.Score.ToString("0.00")
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary">
+                    No recommendation yet. Select your favorite artists and songs, then click
+                    <strong>Recommend a Book</strong>.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const maxArtists = 20;
+            const artistCheckboxes = document.querySelectorAll('.artist-checkbox');
+
+            function updateArtistDisabledStates() {
+                const checked = Array.from(artistCheckboxes).filter(cb => cb.checked);
+                const disableOthers = checked.length >= maxArtists;
+
+                artistCheckboxes.forEach(cb => {
+                    if (!cb.checked) {
+                        cb.disabled = disableOthers;
+                    }
+                });
+            }
+
+            artistCheckboxes.forEach(cb => {
+                cb.addEventListener('change', updateArtistDisabledStates);
+            });
+
+            updateArtistDisabledStates();
+        })();
+    </script>
+}
+
+
