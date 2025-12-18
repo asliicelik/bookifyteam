@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/asli/MyMvcProject/MyMvcProject.csproj": {}
+    "/Users/asli/Downloads/bookifyteam/MyMvcProject.csproj": {}
   },
   "projects": {
-    "/Users/asli/MyMvcProject/MyMvcProject.csproj": {
+    "/Users/asli/Downloads/bookifyteam/MyMvcProject.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/asli/MyMvcProject/MyMvcProject.csproj",
+        "projectUniqueName": "/Users/asli/Downloads/bookifyteam/MyMvcProject.csproj",
         "projectName": "MyMvcProject",
-        "projectPath": "/Users/asli/MyMvcProject/MyMvcProject.csproj",
+        "projectPath": "/Users/asli/Downloads/bookifyteam/MyMvcProject.csproj",
         "packagesPath": "/Users/asli/.nuget/packages/",
-        "outputPath": "/Users/asli/MyMvcProject/obj/",
+        "outputPath": "/Users/asli/Downloads/bookifyteam/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/asli/.nuget/NuGet/NuGet.Config"

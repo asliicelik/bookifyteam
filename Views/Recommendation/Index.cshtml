@@ -1,0 +1,185 @@
+@model MyMvcProject.Models.RecommendationViewModel
+@{
+    ViewData["Title"] = "Mood-based Recommendations";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="card-title h4 mb-3">
+                        <i class="bi bi-music-note-list"></i> Select Your Mood
+                    </h3>
+                    <p class="text-muted">
+                        Choose <strong>1 to 3 moods</strong>. We will first recommend
+                        <strong>up to 5 songs</strong>, then <strong>1 book</strong> that best matches the mix.
+                    </p>
+
+                    <form asp-action="Recommend" asp-controller="Recommendation" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold">Moods</label>
+                                <small class="text-muted">Max 3</small>
+                            </div>
+
+                            <div id="mood-list" class="row g-2">
+                                @for (var i = 0; i < Model.Moods.Count; i++)
+                                {
+                                    var mood = Model.Moods[i];
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input mood-checkbox"
+                                                   type="checkbox"
+                                                   name="SelectedMoodIds"
+                                                   value="@mood.Id"
+                                                   id="mood_@mood.Id"
+                                                   @(mood.IsSelected ? "checked" : null) />
+                                            <label class="form-check-label" for="mood_@mood.Id">
+                                                @mood.DisplayName
+                                            </label>
+                                            @if (!string.IsNullOrEmpty(mood.Description))
+                                            {
+                                                <div class="form-text small text-muted">
+                                                    @mood.Description
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <span asp-validation-for="SelectedMoodIds" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-stars"></i> Recommend
+                        </button>
+                    </form>
+
+                    @if (!string.IsNullOrEmpty(Model.ValidationMessage))
+                    {
+                        <div class="alert alert-warning mt-3 mb-0" role="alert">
+                            @Model.ValidationMessage
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="alert alert-info small">
+                <strong>How it works?</strong><br />
+                If you select:
+                <ul class="mb-0">
+                    <li>1 mood → weight = 1.0</li>
+                    <li>2 moods → each = 0.5</li>
+                    <li>3 moods → each ≈ 0.33</li>
+                </ul>
+                Each song and book has affinity values per mood. We sum
+                <code>weight × affinity</code> to get a total score.
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="mb-3">
+                <h3 class="h4">
+                    <i class="bi bi-music-note-beamed"></i> Songs
+                </h3>
+                <p class="text-muted mb-2">Top 5 songs based on your selected moods.</p>
+                @if (Model.SongResults != null && Model.SongResults.Any())
+                {
+                    <div class="list-group mb-4">
+                        @foreach (var item in Model.SongResults)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="me-3">
+                                    <div class="fw-semibold">@item.Song.Title</div>
+                                    <div class="text-muted small">@item.Song.Artist @if (!string.IsNullOrEmpty(item.Song.Genre)) { <span> • @item.Song.Genre</span> }</div>
+                                    @if (item.Song.Tags.Any())
+                                    {
+                                        <div class="small mt-1">
+                                            @foreach (var tag in item.Song.Tags)
+                                            {
+                                                <span class="badge bg-light text-secondary border me-1">@tag</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary-emphasis">
+                                    Score: @item.Score.ToString("0.00")
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-secondary">
+                        No songs to show yet. Select some moods and click <strong>Recommend</strong>.
+                    </div>
+                }
+            </div>
+
+            <div>
+                <h3 class="h4">
+                    <i class="bi bi-book"></i> Book
+                </h3>
+                <p class="text-muted mb-2">The single book that best matches your mood mix.</p>
+                @if (Model.BookResult != null && Model.BookResult.Book != null && Model.BookResult.Score > 0)
+                {
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-1">@Model.BookResult.Book.Title</h5>
+                            <p class="card-subtitle text-muted mb-2">@Model.BookResult.Book.Author</p>
+                            <p>
+                                <span class="badge bg-secondary">@Model.BookResult.Book.Category</span>
+                            </p>
+                            <p class="mb-0">
+                                <span class="badge bg-success-subtle text-success-emphasis">
+                                    Score: @Model.BookResult.Score.ToString("0.00")
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-secondary">
+                        No book recommendation yet. Choose moods and click <strong>Recommend</strong>.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const maxMoods = 3;
+            const checkboxes = document.querySelectorAll('.mood-checkbox');
+
+            function updateDisabledStates() {
+                const checked = Array.from(checkboxes).filter(cb => cb.checked);
+                const disableOthers = checked.length >= maxMoods;
+
+                checkboxes.forEach(cb => {
+                    if (!cb.checked) {
+                        cb.disabled = disableOthers;
+                    }
+                });
+            }
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateDisabledStates);
+            });
+
+            // initial state
+            updateDisabledStates();
+        })();
+    </script>
+}
+
+

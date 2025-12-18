@@ -8,11 +8,22 @@ public class RecommendationService : IRecommendationService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<RecommendationService> _logger;
+    private readonly IMoodCatalogProvider _moodCatalogProvider;
+    private readonly ISongCatalogProvider _songCatalogProvider;
+    private readonly IBookCatalogProvider _bookCatalogProvider;
 
-    public RecommendationService(ApplicationDbContext context, ILogger<RecommendationService> logger)
+    public RecommendationService(
+        ApplicationDbContext context,
+        ILogger<RecommendationService> logger,
+        IMoodCatalogProvider moodCatalogProvider,
+        ISongCatalogProvider songCatalogProvider,
+        IBookCatalogProvider bookCatalogProvider)
     {
         _context = context;
         _logger = logger;
+        _moodCatalogProvider = moodCatalogProvider;
+        _songCatalogProvider = songCatalogProvider;
+        _bookCatalogProvider = bookCatalogProvider;
     }
 
     public async Task<string> DetectMoodAsync(string musicInput)
@@ -101,6 +112,144 @@ public class RecommendationService : IRecommendationService
     public async Task<Book?> GetBookByIdAsync(int id)
     {
         return await _context.Books.FindAsync(id);
+    }
+
+    public List<SongResult> RecommendSongs(List<string> moodIds, int top = 5)
+    {
+        var normalizedMoods = NormalizeMoodIds(moodIds);
+        var weights = BuildWeights(normalizedMoods);
+
+        if (!weights.Any())
+        {
+            return new List<SongResult>();
+        }
+
+        var songs = _songCatalogProvider.GetAll();
+
+        var scored = songs
+            .Select(song => new SongResult
+            {
+                Song = song,
+                Score = ComputeScore(song.MoodAffinities, weights)
+            })
+            .Where(r => r.Score > 0)
+            .OrderByDescending(r => r.Score)
+            .ThenBy(r => r.Song.Title)
+            .Take(top)
+            .ToList();
+
+        if (scored.Count == 0)
+        {
+            // Fallback: take top songs by any affinity with closest moods (simply max affinity).
+            scored = songs
+                .Select(song => new SongResult
+                {
+                    Song = song,
+                    Score = song.MoodAffinities
+                        .Where(kv => weights.ContainsKey(kv.Key))
+                        .Select(kv => kv.Value)
+                        .DefaultIfEmpty(0)
+                        .Max()
+                })
+                .Where(r => r.Score > 0)
+                .OrderByDescending(r => r.Score)
+                .ThenBy(r => r.Song.Title)
+                .Take(top)
+                .ToList();
+        }
+
+        return scored;
+    }
+
+    public BookResult? RecommendBook(List<string> moodIds)
+    {
+        var normalizedMoods = NormalizeMoodIds(moodIds);
+        var weights = BuildWeights(normalizedMoods);
+
+        if (!weights.Any())
+        {
+            return null;
+        }
+
+        var books = _bookCatalogProvider.GetAll();
+
+        var scored = books
+            .Select(book => new BookResult
+            {
+                Book = book,
+                Score = ComputeScore(book.MoodAffinities, weights)
+            })
+            .Where(r => r.Score > 0)
+            .OrderByDescending(r => r.Score)
+            .ThenBy(r => r.Book!.Title)
+            .FirstOrDefault();
+
+        if (scored == null || scored.Score <= 0)
+        {
+            // Fallback to the closest by max affinity.
+            scored = books
+                .Select(book => new BookResult
+                {
+                    Book = book,
+                    Score = book.MoodAffinities
+                        .Where(kv => weights.ContainsKey(kv.Key))
+                        .Select(kv => kv.Value)
+                        .DefaultIfEmpty(0)
+                        .Max()
+                })
+                .Where(r => r.Score > 0)
+                .OrderByDescending(r => r.Score)
+                .ThenBy(r => r.Book!.Title)
+                .FirstOrDefault();
+        }
+
+        return scored;
+    }
+
+    private static List<string> NormalizeMoodIds(List<string> moodIds)
+    {
+        return moodIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(id => id.Trim().ToLowerInvariant())
+            .Distinct()
+            .ToList();
+    }
+
+    private static Dictionary<string, double> BuildWeights(List<string> moodIds)
+    {
+        if (moodIds.Count == 0)
+        {
+            return new Dictionary<string, double>();
+        }
+
+        var count = Math.Min(3, moodIds.Count);
+        double weight = count switch
+        {
+            1 => 1.0,
+            2 => 0.5,
+            3 => 1.0 / 3.0,
+            _ => 1.0 / count
+        };
+
+        return moodIds
+            .Take(3)
+            .ToDictionary(id => id, _ => weight);
+    }
+
+    private static double ComputeScore(
+        IReadOnlyDictionary<string, double> affinities,
+        IReadOnlyDictionary<string, double> weights)
+    {
+        double score = 0;
+        foreach (var (moodId, weight) in weights)
+        {
+            if (affinities.TryGetValue(moodId, out var affinity))
+            {
+                score += weight * affinity;
+            }
+        }
+
+        return score;
     }
 }
 

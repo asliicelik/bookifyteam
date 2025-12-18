@@ -13,6 +13,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         ?? "Data Source=bookrecommendations.db"));
 
 // Add custom services
+builder.Services.AddSingleton<IMoodCatalogProvider, MoodCatalogProvider>();
+builder.Services.AddSingleton<ISongCatalogProvider, SongCatalogProvider>();
+builder.Services.AddSingleton<IBookCatalogProvider, BookCatalogProvider>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
 // Add session support

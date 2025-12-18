@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "kz0gn3XI0VA=",
+  "dgSpecHash": "KrJINGrtoRo=",
   "success": true,
-  "projectFilePath": "/Users/asli/MyMvcProject/MyMvcProject.csproj",
+  "projectFilePath": "/Users/asli/Downloads/bookifyteam/MyMvcProject.csproj",
   "expectedPackageFiles": [
     "/Users/asli/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/Users/asli/.nuget/packages/microsoft.build/17.7.2/microsoft.build.17.7.2.nupkg.sha512",

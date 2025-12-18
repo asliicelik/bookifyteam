@@ -18,7 +18,8 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        return View(new MusicInputViewModel());
+        // Redirect home page directly to the mood selector
+        return RedirectToAction("Index", "Recommendation");
     }
 
     [HttpPost]
